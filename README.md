@@ -1,7 +1,5 @@
 # 💉 Remote Process Injector - Proof of Concept
 
----
-
 (PT-BR) Esta projeto é uma **PoC (Proof of Concept)** de uma técnica clássica de injeção de código em processos remotos no Windows. Através do uso de chamadas diretas à API nativa do sistema, ele injeta um shellcode diretamente na memória de um processo alvo, utilizando as seguintes funções:
 
 - OpenProcess
