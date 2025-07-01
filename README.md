@@ -1,6 +1,8 @@
 # 💉 Remote Process Injector - Proof of Concept
 
-Esta projeto é uma **PoC (Proof of Concept)** de uma técnica clássica de injeção de código em processos remotos no Windows. Através do uso de chamadas diretas à API nativa do sistema, ele injeta um shellcode diretamente na memória de um processo alvo, utilizando as seguintes funções:
+---
+
+(PT-BR) Esta projeto é uma **PoC (Proof of Concept)** de uma técnica clássica de injeção de código em processos remotos no Windows. Através do uso de chamadas diretas à API nativa do sistema, ele injeta um shellcode diretamente na memória de um processo alvo, utilizando as seguintes funções:
 
 - OpenProcess
 - VirtualAllocEx
@@ -43,3 +45,48 @@ Essa técnica é conhecida como **Remote Thread Injection** ou **Shellcode Injec
 - Utiliza P/Invoke para chamadas às funções da API Win32.
 - O shellcode binário foi gerado com msfvenom (arquitetura x64).
 - Testado e executado em ambiente Windows.
+
+---
+
+(EN-US) This project is a PoC (Proof of Concept) demonstrating a classic technique of code injection into remote processes on Windows. By using direct calls to the native Windows API, it injects shellcode directly into the memory of a target process, utilizing the following functions:
+
+- OpenProcess
+- VirtualAllocEx
+- WriteProcessMemory
+- CreateRemoteThread
+
+⚠️ Warning: This project is intended for educational and research purposes only. Use responsibly.
+
+---
+
+## How it works:
+The project injects shellcode into a remote process through the following steps:
+
+1. Lists all running processes.
+2. Prompts the user for the target process PID.
+3. Loads shellcode from an external binary file.
+4. Opens the process with sufficient permissions.
+5. Allocates an executable memory region inside the remote process.
+6. Writes the shellcode to the allocated memory.
+7. Creates a remote thread that executes the injected shellcode.
+
+This technique is known as Remote Thread Injection or Shellcode Injection via CreateRemoteThread and is commonly referenced in the MITRE ATT&CK framework as:
+
+- **T1055 – Process Injection**
+  - Sub-technique: T1055.002 – Portable Executable Injection
+
+## Structure:
+
+- Program: Main application logic.
+- Injector: Implements injection logic using Win32 API calls.
+- ShellcodeLoader: Loads shellcode from an external binary file.
+- ProcessHelper: Lists running processes and verifies the provided PID.
+- Logger: Formats output to the console.
+
+## Environment:
+
+- Developed in C# with .NET 8.0
+- Compiled using the command-line compiler csc (C# Compiler)
+- Uses P/Invoke to call Win32 API functions
+- Shellcode binary was generated using msfvenom (x64 architecture)
+- Tested and run on Windows environment
